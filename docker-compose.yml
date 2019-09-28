@@ -1,0 +1,58 @@
+version: '3.3'
+services:
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+    volumes:
+      - /tmp/goGizwitsMysql:/var/lib/mysql
+  redise:
+    image: redis:5.0.5
+    ports:
+      - "6379:6379"
+  emq:
+    image: emqx/emqx:v3.2.3
+    container_name: emq
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+      - "8083:8083"
+      - "5683:5683/udp"
+    networks:
+      - docker-network
+    volumes:
+      - /tmp/lwm2m_xml/:/etc/lwm2m_xml/
+      - /tmp/plugins/:/etc/plugins/
+    environment:
+      - EMQX_LOG__LEVEL=debug
+      - EMQX_LWM2M__AUTO_OBSERVE=on
+  elasticsearch:
+    image: elasticsearch:7.3.2
+    container_name: elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - node.name=elasticsearch
+      - cluster.initial_master_nodes=elasticsearch
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /tmp/elasticsearch/data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - docker-network
+  kibana:
+    image: kibana:7.3.2
+    ports:
+      - "5601:5601"
+    networks:
+      - docker-network
+
+networks:
+  docker-network:
